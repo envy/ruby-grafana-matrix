@@ -1,20 +1,12 @@
-<%= data['title'] %>
-<%- unless data.fetch('message', '').empty? -%>
-<%= data['message'] %>
-<%- end -%>
-<%- if data.key? 'error' -%>
-Error: <%= data['error'] %>
+<%= data['labels']['alertname'] %>
+<%- unless data['annotations'].fetch('description', '').empty? -%>
+<%= data['annotations']['description'] %>
 <%- end -%>
 
-<%- if data['state'] != 'ok' -%>
-<%-   unless data['evalMatches'].empty? -%>
-<%-     data['evalMatches'].each do |match| -%>
-<%= match['metric'] %>: <%= match['value'] %>
-<%-     end -%>
+<%- if data['status'] != 'resolved' -%>
+<%-   unless data['valueString'].empty? -%>
+<%=   data['valueString'] %>
+<%-   end -%>
 
-<%-   end -%>
-<%-   if data['imageUrl'] && rule.image? -%>
-Image: <%= data['imageUrl'] %>
-<%-   end -%>
 <%- end -%>
-URL: <%= data['ruleUrl'] %>
+URL: <%= data['generatorURL'] %>

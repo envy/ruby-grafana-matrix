@@ -53,32 +53,26 @@ module GrafanaMatrix
         room ||= client.join_room(rule.room).room_id
         halt 500, 'Unable to acquire Matrix room from rule and client' unless room
 
-        # Upload the image to the Matrix HS if requested to be embedded
-        begin
-          data['imageUrl'] = image_handler.upload(client, data['imageUrl']) if rule.embed_image? && rule.image? && data['imageUrl']
-        rescue StandardError => e
-          logger.fatal "Failed to upload image\n#{e.class} (#{e.message})\n#{e.backtrace.join "\n"}"
-          # Disable embedding for this call
-          rule.data[:embed_image] = false
+        # A webhook call can now contain more than one alert, so loop over them
+        data['alerts'].each do |alert|
+          plain = renderer.render_plain(alert, rule, rule.plain_template)
+          html = renderer.render_html(alert, rule, rule.html_template)
+
+          logger.debug 'Plain:'
+          logger.debug plain
+
+          logger.debug 'HTML:'
+          logger.debug html
+
+          # Support rules with nil client explicitly specified, for testing
+          next unless client.is_a? MatrixSdk::Api
+
+          client.send_message_event(room, 'm.room.message',
+                                    { msgtype: rule.msgtype,
+                                      body: plain,
+                                      formatted_body: html,
+                                      format: 'org.matrix.custom.html' })
         end
-
-        plain = renderer.render_plain(data, rule, rule.plain_template)
-        html = renderer.render_html(data, rule, rule.html_template)
-
-        logger.debug 'Plain:'
-        logger.debug plain
-
-        logger.debug 'HTML:'
-        logger.debug html
-
-        # Support rules with nil client explicitly specified, for testing
-        next unless client.is_a? MatrixSdk::Api
-
-        client.send_message_event(room, 'm.room.message',
-                                  { msgtype: rule.msgtype,
-                                    body: plain,
-                                    formatted_body: html,
-                                    format: 'org.matrix.custom.html' })
       end
 
       { result: :success }.to_json

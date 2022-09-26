@@ -7,8 +7,10 @@ module GrafanaMatrix
 
     SEVERITY_COLOURS = {
       ok: '#10a345',
+      resolved: '#10a345',
       paused: '#8e8e8e',
       alerting: '#ed2e18',
+      firing: '#ed2e18',
       pending: '#8e8e8e',
       no_data: '#f79520'
     }.freeze
